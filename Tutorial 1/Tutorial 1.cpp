@@ -56,14 +56,14 @@ int main(int argc, char **argv) {
 
 		//Part 3 - memory allocation
 		//host - input
-		std::vector<int> A(1000000);
-		std::vector<int> B(1000000);
+		std::vector<double> A{1, 2, 3, 4 ,5 ,6, 7, 8, 9 };
+		std::vector<double> B{ 1, 2, 3, 4 ,5 ,6, 7, 8, 9 };
 		
 		size_t vector_elements = A.size();//number of elements
-		size_t vector_size = A.size()*sizeof(int);//size in bytes
+		size_t vector_size = A.size()*sizeof(double);//size in bytes
 
 		//host - output
-		std::vector<int> C(vector_elements);
+		std::vector<double> C(vector_elements);
 
 		//device - buffers
 		cl::Buffer buffer_A(context, CL_MEM_READ_WRITE, vector_size);
@@ -81,19 +81,29 @@ int main(int argc, char **argv) {
 		queue.enqueueWriteBuffer(buffer_A, CL_TRUE, 0, vector_size, &A[0], NULL, &B_event);
 
 		
+		
+		//4.2 Setup and execute the different kernels (i.e. device code)
+		//cl::Kernel kernel_add = cl::Kernel(program, "add");
+		//multipluication kernal
+		cl::Kernel kernel_mult = cl::Kernel(program, "addD");
 
-		//4.2 Setup and execute the kernel (i.e. device code)
-		cl::Kernel kernel_add = cl::Kernel(program, "add");
-		kernel_add.setArg(0, buffer_A);
-		kernel_add.setArg(1, buffer_B);
-		kernel_add.setArg(2, buffer_C);
+		//kernal add stuff
+		//kernel_add.setArg(0, buffer_C);
+		//kernel_add.setArg(1, buffer_B);
+		//kernel_add.setArg(2, buffer_C);
+		
+		//kernal multiplication stuff
+		kernel_mult.setArg(0, buffer_A);
+		kernel_mult.setArg(1, buffer_B);
+		kernel_mult.setArg(2, buffer_C);
 
 		//Create event
 		cl::Event prof_event;
 
 		//Attach to queue responsible for kernal launch
-		queue.enqueueNDRangeKernel(kernel_add, cl::NullRange, cl::NDRange(vector_elements), cl::NullRange, NULL, &prof_event);
-
+		queue.enqueueNDRangeKernel(kernel_mult, cl::NullRange, cl::NDRange(vector_elements), cl::NullRange, NULL, &prof_event);
+		//queue.enqueueNDRangeKernel(kernel_add, cl::NullRange, cl::NDRange(vector_elements), cl::NullRange, NULL, &prof_event);
+		
 		//4.3 Copy the result from device to host
 		queue.enqueueReadBuffer(buffer_C, CL_TRUE, 0, vector_size, &C[0]);
 
