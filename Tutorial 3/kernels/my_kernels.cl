@@ -13,6 +13,7 @@ kernel void reduce_add_1(global const int* A, global int* B) {
 	if (((id % 2) == 0) && ((id + 1) < N)) 
 		B[id] += B[id + 1];
 
+	//barriers between each step confirm that the previous step has been completed.
 	barrier(CLK_GLOBAL_MEM_FENCE);
 
 	if (((id % 4) == 0) && ((id + 2) < N)) 
@@ -35,7 +36,7 @@ kernel void reduce_add_2(global const int* A, global int* B) {
 	int N = get_global_size(0);
 
 	B[id] = A[id];
-
+	//barriers between each step confirm that the previous step has been completed..
 	barrier(CLK_GLOBAL_MEM_FENCE);
 
 	for (int i = 1; i < N; i *= 2) { //i is a stride
@@ -55,7 +56,7 @@ kernel void reduce_add_3(global const int* A, global int* B, local int* scratch)
 	//cache all N values from global memory to local memory
 	scratch[lid] = A[id];
 
-	barrier(CLK_LOCAL_MEM_FENCE);//wait for all local threads to finish copying from global to local memory
+	barrier(CLK_LOCAL_MEM_FENCE);//wait for all local threads to finish copying from global to local memory - this is faster than global when using barriers
 
 	for (int i = 1; i < N; i *= 2) {
 		if (!(lid % (i * 2)) && ((lid + i) < N)) 
@@ -96,9 +97,9 @@ kernel void reduce_add_4(global const int* A, global int* B, local int* scratch)
 }
 
 //a very simple histogram implementation
-kernel void hist_simple(global const int* A, global int* H) { 
+kernel void hist_simple(global const int* A, global int* H, const int* nr_bins) { 
+	
 	int id = get_global_id(0);
-
 	//assumes that H has been initialised to 0
 	int bin_index = A[id];//take value as a bin index
 
