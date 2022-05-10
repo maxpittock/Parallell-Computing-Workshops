@@ -84,3 +84,12 @@ kernel void convolutionND(global const uchar* A, global uchar* B, constant float
 
 	B[id] = (uchar)result;
 }
+
+kernel void hist_simple(global const int* A, global int* B) {
+
+	int id = get_global_id(0);
+	//assumes that H has been initialised to 0
+	int bin_index = A[id];//take value as a bin index
+
+	atomic_inc(&B[bin_index]);//serial operation, not very efficient!
+}

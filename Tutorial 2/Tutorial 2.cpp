@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
 	//Part 1 - handle command line options such as device selection, verbosity, etc.
 	int platform_id = 0;
 	int device_id = 0;
-	string image_filename = "test.ppm";
+	string image_filename = "test.pgm";
 
 	for (int i = 1; i < argc; i++) {
 		if ((strcmp(argv[i], "-p") == 0) && (i < (argc - 1))) { platform_id = atoi(argv[++i]); }
@@ -70,37 +70,61 @@ int main(int argc, char **argv) {
 			throw err;
 		}
 
+		size_t local_size = 10;
+		typedef int mytype;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		//output vector
+		
+		std::vector<mytype> hist_vector(255, 0); // Output 
+		size_t output_size = hist_vector.size() * sizeof(mytype);//size in bytes
+		printf("Output vector setup");
 		//Part 4 - device operations
 
 		//device - buffers
 		cl::Buffer dev_image_input(context, CL_MEM_READ_ONLY, image_input.size());
-		cl::Buffer dev_image_output(context, CL_MEM_READ_WRITE, image_input.size()); //should be the same as input image
-//		cl::Buffer dev_convolution_mask(context, CL_MEM_READ_ONLY, convolution_mask.size()*sizeof(float));
+		cl::Buffer dev_image_output(context, CL_MEM_READ_WRITE, output_size); //should be the same as input image
 
 		//4.1 Copy images to device memory
 		queue.enqueueWriteBuffer(dev_image_input, CL_TRUE, 0, image_input.size(), &image_input.data()[0]);
-//		queue.enqueueWriteBuffer(dev_convolution_mask, CL_TRUE, 0, convolution_mask.size()*sizeof(float), &convolution_mask[0]);
 
-		//4.2 Setup and execute the kernel (i.e. device code)
-		cl::Kernel kernel = cl::Kernel(program, "identity");
+				//4.2 Setup and execute the kernel (i.e. device code)
+		cl::Kernel kernel = cl::Kernel(program, "hist_simple");
 		kernel.setArg(0, dev_image_input);
 		kernel.setArg(1, dev_image_output);
-//		kernel.setArg(2, dev_convolution_mask);
+		printf("Kernal arguments set");
+		//		kernel.setArg(2, dev_convolution_mask);
 
 		queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(image_input.size()), cl::NullRange);
-
-		vector<unsigned char> output_buffer(image_input.size());
+		printf("Range kernal done");
 		//4.3 Copy the result from device to host
-		queue.enqueueReadBuffer(dev_image_output, CL_TRUE, 0, output_buffer.size(), &output_buffer.data()[0]);
 
-		CImg<unsigned char> output_image(output_buffer.data(), image_input.width(), image_input.height(), image_input.depth(), image_input.spectrum());
-		CImgDisplay disp_output(output_image,"output");
+		//vector<unsigned char> output_buffer(image_input.size());
 
- 		while (!disp_input.is_closed() && !disp_output.is_closed()
+		queue.enqueueReadBuffer(dev_image_output, CL_TRUE, 0, output_size, &hist_vector[0]);
+		printf("Read buffer done");
+		std::cout << hist_vector << std::endl;
+
+		//CImg<unsigned char> output_image(output_buffer.data(), image_input.width(), image_input.height(), image_input.depth(), image_input.spectrum());
+		CImgDisplay disp_output(image_input, "output");
+
+		while (!disp_input.is_closed() && !disp_output.is_closed()
 			&& !disp_input.is_keyESC() && !disp_output.is_keyESC()) {
-		    disp_input.wait(1);
-		    disp_output.wait(1);
-	    }		
+			disp_input.wait(1);
+			disp_output.wait(1);
+		}
 
 	}
 	catch (const cl::Error& err) {
